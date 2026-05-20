@@ -1,6 +1,6 @@
 # codef
 
-code fragments management
+[code fragments management](https://chat.deepseek.com/a/chat/s/ceb117fd-ab10-4f88-9cb2-6c1cb1c46d34)
 
 ```sh
  $ codef session new "Session name"
