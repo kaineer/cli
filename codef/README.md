@@ -19,3 +19,10 @@
    * build markdown file
    * outputs it to stdout
 ```
+
+## dependencies
+
+* jq
+* fzf
+* $EDITOR variable
+* var codef.base
