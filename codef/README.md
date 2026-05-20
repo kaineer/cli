@@ -6,6 +6,10 @@
  $ codef session new "Session name"
    * creates session with uuid
    * puts "name: Session name" into <session dir>/session.yaml
+ $ codef session rename "New name"
+ $ codef session rm "session-id-part"
+ $ codef session ls
+ 
  $ codef add 
    * in case of TERM_PROGRAM=zed
    * checks environment variables
