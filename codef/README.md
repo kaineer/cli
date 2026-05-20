@@ -16,9 +16,11 @@
    * checks environment variables
    * makes new fragment from variables in "session dir"
    * puts line numbers into session.json for basename
+   
  $ codef (md|markdown)
    * build markdown file
    * outputs it to stdout
+   
  $ codef ls 
    * outputs list of files in current fragment
 ```
