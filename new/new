@@ -12,7 +12,7 @@ if [ ! -d "$ROOT_DIR/$1" ]; then
 fi
 if [ ! -f "$ROOT_DIR/$1/$1" ]; then
   debug "Creating $ROOT_DIR/$1/$1"
-  touch "$ROOT_DIR/$1/$1"
+  echo "#!/usr/bin/env bash" > "$ROOT_DIR/$1/$1"
   chmod 755 "$ROOT_DIR/$1/$1"
 
   debug "Creating $ROOT_DIR/$1/README.md"
