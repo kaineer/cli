@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+BIN0="$(readlink -f $0)"
+DIR0="$(dirname $BIN0)"
+ROOT_DIR="$(dirname $DIR0)"
+
+[[ "$1" == "" ]] && exit 1
+
+if [ ! -d "$ROOT_DIR/$1" ]; then
+  debug "Creating $ROOT_DIR/$1"
+  mkdir -p "$ROOT_DIR/$1"
+fi
+if [ ! -f "$ROOT_DIR/$1/$1" ]; then
+  debug "Creating $ROOT_DIR/$1/$1"
+  touch "$ROOT_DIR/$1/$1"
+  chmod 755 "$ROOT_DIR/$1/$1"
+
+  debug "Creating $ROOT_DIR/$1/README.md"
+  echo -e "# $1\n $1" > "$ROOT_DIR/$1/README.md"
+fi
