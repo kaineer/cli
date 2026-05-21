@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+#  _____  ___
+# /__   \/ __\  Tangerine Cat, kaineer@gmail.com
+#   / /\/ /
+#  / / / /___   github: https://github.com/kaineer
+#  \/  \____/   twitter: https://twitter.com/kaineer
+#
+# What: link script into $HOME/bin
+#
+
+BIN0="$(readlink -f $0)"
+DIR0="$(dirname $BIN0)"
+DIR_CLI="$(dirname $DIR0)"
+
+TARGET="${1:-install}"
+TARGET_FILE="$DIR_CLI/$TARGET/$TARGET"
+
+if [ -d $HOME/bin ]; then
+  if [ ! -f $HOME/bin/$TARGET ]; then
+    ln -s $TARGET_FILE $HOME/bin/$TARGET
+    chmod 755 $HOME/bin/$TARGET
+  else
+    warn "Link to «$TARGET» already exists"
+  fi
+else
+  error "$HOME/bin not found"
+fi
