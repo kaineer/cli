@@ -2,6 +2,8 @@
 
 deepseek cli
 
+ * https://chat.deepseek.com/a/chat/s/bba726ac-dd0d-4d15-b2d1-5e2e72c3e56e
+
  $ ds auth
    : should import authentication 
    : from curl command line
