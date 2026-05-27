@@ -1,1 +1,76 @@
 #!/usr/bin/env bash
+
+BIN0="$(readlink -f $0)"
+DIR0="$(dirname $BIN0)"
+DIR="$(dirname $DIR0)"
+
+DOTFILES="$HOME/git/config/dotfiles"
+ANSIBLE_SUBDIR="ansible/files/bash/scripts"
+SCRIPT_VARFILE="ansible/vars/scripts.yml"
+
+check_dotfiles() {
+  [ ! -d "$DOTFILES" ] && return 1
+  [ ! -d "$DOTFILES/$ANSIBLE_SUBDIR" ] && return 1
+  [ ! -f "$DOTFILES/$SCRIPT_VARFILE" ] && return 1
+  return 0
+}
+
+copy_script() {
+  # NAME="$1"
+  # if [ -f "$DIR/$NAME/$NAME" ]; then
+  #   cp "$DIR/$NAME/$NAME" "$DOTFILES/$ANSIBLE_SUBDIR/$NAME"
+  #   return 0
+  # else
+  #   error "Script $NAME not found in cli repository"
+  #   return 1
+  # fi
+  NAME="$1"
+  SCRIPT_SRC="$DIR/$NAME"
+  SCRIPT_DEST="$DOTFILES/$ANSIBLE_SUBDIR"
+
+  if [ ! -d "$SCRIPT_SRC" ]; then
+    error "Script directory $NAME not found in cli repository"
+    return 1
+  fi
+
+  if [ -f "$SCRIPT_SRC/$NAME" ]; then
+    cp "$SCRIPT_SRC/$NAME" "$SCRIPT_DEST/$NAME"
+  else
+    error "Main script $NAME not found"
+    return 1
+  fi
+
+  fd . "$SCRIPT_SRC" --type d --exec bash -c '
+    rel="${1#$2/}"
+    mkdir -p "$3/$rel"
+  ' _ {} "$SCRIPT_SRC" "$SCRIPT_DEST"
+
+  fd . "$SCRIPT_SRC" --type f --exclude "README.md" --exec cp {} "$SCRIPT_DEST/{//}" \;
+
+  return 0
+}
+
+add_to_yaml() {
+  NAME="$1"
+  VARFILE="$DOTFILES/$SCRIPT_VARFILE"
+
+  yq ".scripts += [\"$NAME\"]" "$VARFILE" >"$VARFILE.tmp"
+  mv "$VARFILE.tmp" "$VARFILE"
+}
+
+check_inner_scripts() {
+  case "$1" in
+  "new"|"install"|"ingrave")
+    error "Let's keep cli inner kitchen to cli"
+    return 1
+    ;;
+  *) echo -e "";;
+  esac
+}
+
+NAME="$1"
+
+check_inner_scripts $NAME && \
+  check_dotfiles && \
+  copy_script $NAME && \
+  add_to_yaml $NAME
