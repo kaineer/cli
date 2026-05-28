@@ -41,7 +41,6 @@ add_to_yaml() {
 
   yq ".scripts += [\"$NAME\"]" "$YAML_FILE" -y > "${YAML_FILE}.tmp"
   mv "${YAML_FILE}.tmp" "$YAML_FILE"
-  rm "${YAML_FILE}.tmp"
 }
 
 copy_script() {
@@ -61,12 +60,17 @@ copy_script() {
     return 1
   fi
 
-  fd . "$SCRIPT_SRC" --type d --exec bash -c '
-    rel="${1#$2/}"
-    mkdir -p "$3/$rel"
-  ' _ {} "$SCRIPT_SRC" "$SCRIPT_DEST"
+  cd "$SCRIPT_SRC" || return 1
 
-  fd . "$SCRIPT_SRC" --type f --exclude "README.md" --exec cp {} "$SCRIPT_DEST/{//}" \;
+  fd . --type d --exec bash -c 'mkdir -p "$1/$2"' _ "$SCRIPT_DEST" {}
+
+  fd . --type f --exclude "README.md" --exec bash -c '
+    dest="$1/$2"
+    mkdir -p "$(dirname "$dest")"
+    cp "$3" "$dest"
+  ' _ "$SCRIPT_DEST" {} {}
+
+  cd - >/dev/null || return 1
 
   return 0
 }
