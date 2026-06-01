@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+CLIPBOARD="$(xsel -o)"
+
+if [[ "$CLIPBOARD" != "" ]]; then
+  var -i ds.curl
+fi
