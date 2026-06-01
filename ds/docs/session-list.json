@@ -1,0 +1,38 @@
+{
+  "domain": "https://chat.deepseek.com/api/v0/chat_session/fetch_page",
+  "query_params": {
+    "lte_cursor.pinned": "false",
+    "lte_cursor.updated_at": "1766404276.168"
+  },
+  "cookies": {
+    "intercom-device-id-guh50jw4": "253ebe7a-6621-493b-97d2-b94c8847c842",
+    ".thumbcache_6b2e5483f9d858d7c661c5e276b6a6ae": "",
+    "smidV2": "20260327174726b965f1ff468ae12875577fd842b8eb6200895f92bfb6b5310",
+    "ds_session_id": "917ee7cd4af743c781c040b60a8f5861"
+  },
+  "headers": {
+    "accept": "*/*",
+    "accept-language": "en-US,en;q=0.7",
+    "authorization": "Bearer K6Kw5xOPerT1ollTjmiqu1Q+UCImuhYfc5tnjlV56mdKKxnFJNzffCpk8PT5lM8s",
+    "priority": "u=1, i",
+    "referer": "https://chat.deepseek.com/a/chat/s/45232933-4dc6-45ba-ba10-4e1049c40744",
+    "sec-ch-ua": "\"Chromium\";v=\"148\", \"Brave\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
+    "sec-ch-ua-arch": "\"x86\"",
+    "sec-ch-ua-bitness": "\"64\"",
+    "sec-ch-ua-full-version-list": "\"Chromium\";v=\"148.0.0.0\", \"Brave\";v=\"148.0.0.0\", \"Not/A)Brand\";v=\"99.0.0.0\"",
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-model": "\"\"",
+    "sec-ch-ua-platform": "\"Linux\"",
+    "sec-ch-ua-platform-version": "\"\"",
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-origin",
+    "sec-gpc": "1",
+    "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+    "x-app-version": "2.0.0",
+    "x-client-locale": "ru",
+    "x-client-platform": "web",
+    "x-client-timezone-offset": "18000",
+    "x-client-version": "2.0.0"
+  }
+}

@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+"""
+Конвертер curl-запроса в JSON с разделением URL на domain и query_params.
+Читает curl команду из стандартного ввода и выводит JSON в стандартный вывод.
+"""
+
+import json
+import re
+import sys
+from typing import Dict, Tuple
+from urllib.parse import parse_qs, urlparse
+
+
+def parse_curl_command(
+    curl_text: str,
+) -> Tuple[str, Dict[str, str], Dict[str, str], Dict[str, str]]:
+    """
+    Парсит curl команду и возвращает domain, query_params, cookies и headers.
+
+    Args:
+        curl_text: строка с curl командой
+
+    Returns:
+        кортеж (domain, query_params, cookies_dict, headers_dict)
+    """
+    domain = ""
+    query_params = {}
+    cookies = {}
+    headers = {}
+
+    # Разбиваем на строки и удаляем символы продолжения
+    lines = [
+        line.rstrip(" \\").strip() for line in curl_text.split("\n") if line.strip()
+    ]
+
+    for line in lines:
+        # Пропускаем первую строку с curl
+        if line.startswith("curl "):
+            # Извлекаем URL из первой строки
+            url_match = re.search(r"curl '([^']+)'", line)
+            if url_match:
+                full_url = url_match.group(1)
+
+                # Парсим URL
+                parsed = urlparse(full_url)
+
+                # Формируем domain (протокол + хост + путь без query)
+                domain = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+
+                # Разбираем query параметры
+                if parsed.query:
+                    # parse_qs возвращает значения как списки, берем первый элемент
+                    for key, values in parse_qs(parsed.query).items():
+                        query_params[key] = values[0] if values else ""
+            continue
+
+        # Обрабатываем заголовки (-H)
+        if line.startswith("-H "):
+            header_match = re.search(r"-H '([^:]+):\s*(.+)'", line)
+            if header_match:
+                key = header_match.group(1).strip()
+                value = header_match.group(2).strip()
+                headers[key] = value
+
+        # Обрабатываем куки (-b)
+        elif line.startswith("-b "):
+            cookies_match = re.search(r"-b '(.+)'", line)
+            if cookies_match:
+                cookies_str = cookies_match.group(1)
+                # Парсим отдельные куки
+                for cookie_part in cookies_str.split(";"):
+                    cookie_part = cookie_part.strip()
+                    if "=" in cookie_part:
+                        name, value = cookie_part.split("=", 1)
+                        cookies[name.strip()] = value.strip()
+
+    return domain, query_params, cookies, headers
+
+
+def main():
+    """Основная функция скрипта."""
+    try:
+        # Читаем весь ввод
+        curl_text = sys.stdin.read().strip()
+
+        if not curl_text:
+            print("Ошибка: пустой ввод", file=sys.stderr)
+            sys.exit(1)
+
+        # Парсим curl команду
+        domain, query_params, cookies, headers = parse_curl_command(curl_text)
+
+        if not domain:
+            print("Ошибка: не удалось найти URL в curl запросе", file=sys.stderr)
+            sys.exit(1)
+
+        # Формируем результат
+        result = {
+            "domain": domain,
+            "query_params": query_params,
+            "cookies": cookies,
+            "headers": headers,
+        }
+
+        # Выводим JSON
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+
+    except Exception as e:
+        print(f"Ошибка при обработке: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

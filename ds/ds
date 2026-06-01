@@ -3,6 +3,7 @@
 BIN0=$(readlink -f $0)
 DIR0=$(dirname $BIN0)
 SDIR="$DIR0/ds.d"
+PDIR="$DIR0/ds.py"
 
 if [[ "$1" == "ls" ]]; then
   cd $SDIR && ls -1 && cd - &>/dev/null

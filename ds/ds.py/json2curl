@@ -1,0 +1,98 @@
+#!/usr/bin/env python3
+"""
+Конвертер JSON в curl-запрос.
+Читает JSON из стандартного ввода и выводит curl-команду.
+Поддерживает поля: domain, query_params, cookies, headers, output
+"""
+
+import sys
+import json
+from typing import Dict, Any
+from urllib.parse import urlencode
+
+def json_to_curl(json_data: Dict[str, Any]) -> str:
+    """
+    Преобразует JSON в curl команду.
+
+    Args:
+        json_data: словарь с полями domain, query_params, cookies, headers, output
+
+    Returns:
+        строка с curl командой
+    """
+    domain = json_data.get('domain', '')
+    query_params = json_data.get('query_params', {})
+    cookies = json_data.get('cookies', {})
+    headers = json_data.get('headers', {})
+    output_file = json_data.get('output', '')
+
+    if not domain:
+        raise ValueError("Поле 'domain' обязательно")
+
+    # Собираем полный URL с query параметрами
+    url = domain
+    if query_params:
+        # Сортируем параметры для детерминированного вывода (опционально)
+        sorted_params = dict(sorted(query_params.items()))
+        url += '?' + urlencode(sorted_params)
+
+    # Начинаем сборку curl команды
+    curl_parts = [f"curl '{url}'"]
+
+    # Добавляем output файл, если указан
+    if output_file:
+        escaped_output = output_file.replace("'", "'\\''")
+        curl_parts.append(f"  -o '{escaped_output}'")
+
+    # Добавляем заголовки
+    for key, value in headers.items():
+        # Экранируем кавычки в значении
+        escaped_value = value.replace("'", "'\\''")
+        curl_parts.append(f"  -H '{key}: {escaped_value}'")
+
+    # Добавляем куки, если они есть
+    if cookies:
+        cookie_str = '; '.join([f"{k}={v}" for k, v in cookies.items()])
+        escaped_cookies = cookie_str.replace("'", "'\\''")
+        curl_parts.append(f"  -b '{escaped_cookies}'")
+
+    # Собираем финальную команду с переносами для читаемости
+    return ' \\\n'.join(curl_parts)
+
+def main():
+    """Основная функция скрипта."""
+    try:
+        # Читаем JSON из stdin
+        json_text = sys.stdin.read().strip()
+        if not json_text:
+            print("Ошибка: пустой ввод", file=sys.stderr)
+            sys.exit(1)
+
+        # Парсим JSON
+        json_data = json.loads(json_text)
+
+        # Проверяем поддержку старого формата (url)
+        if 'url' in json_data and 'domain' not in json_data:
+            # Старый формат - конвертируем
+            old_url = json_data['url']
+            from urllib.parse import urlparse, parse_qs
+            parsed = urlparse(old_url)
+            json_data['domain'] = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+            if parsed.query:
+                json_data['query_params'] = {k: v[0] for k, v in parse_qs(parsed.query).items()}
+
+        # Конвертируем в curl
+        curl_command = json_to_curl(json_data)
+
+        # Выводим результат
+        print(curl_command)
+
+    except json.JSONDecodeError as e:
+        print(f"Ошибка парсинга JSON: {e}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Ошибка: {e}", file=sys.stderr)
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
