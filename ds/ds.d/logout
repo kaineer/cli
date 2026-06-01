@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+var rm ds.auth.curl
+var rm ds.auth.json

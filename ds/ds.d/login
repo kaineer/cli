@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+CLIPBOARD="$(xsel -o)"
+
+if [[ "$CLIPBOARD" != "" ]]; then
+  var -i ds.auth.curl
+  var ds.auth.curl | python3 "$PDIR/curl2json" | xsel -ib
+  var -i ds.auth.json
+fi
