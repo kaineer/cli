@@ -18,6 +18,7 @@ TARGET_FILE="$DIR_CLI/$TARGET/$TARGET"
 
 if [ -d $HOME/bin ]; then
   if [ ! -f $HOME/bin/$TARGET ]; then
+    [[ "$TARGET" == "install" ]] && TARGET="cli:install"
     ln -s $TARGET_FILE $HOME/bin/$TARGET
     chmod 755 $HOME/bin/$TARGET
   else
