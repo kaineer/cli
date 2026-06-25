@@ -5,11 +5,13 @@ deepseek cli
  * https://chat.deepseek.com/a/chat/s/bba726ac-dd0d-4d15-b2d1-5e2e72c3e56e
 
 ```sh
- $ ds auth
+ $ ds login
    : should import authentication 
    : from curl command line
    : imported from devtools
    : curl command line may be imported through clipboard
+ $ ds logout 
+   : remove curl json
 ```
 
 # when authorized
