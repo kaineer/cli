@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+JSON=$(var ds.auth.json)
+QUERY="$1"
+
+if [[ "$JSON" != "" ]] then
+  if [[ "$QUERY" != "" ]] then
+    echo "$JSON" | jq "$QUERY"
+  fi
+fi
+
