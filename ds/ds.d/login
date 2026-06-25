@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
 
+#  _____  ___
+# /__   \/ __\  Tangerine Cat, kaineer@gmail.com
+#   / /\/ /
+#  / / / /___   github: https://github.com/kaineer
+#  \/  \____/   twitter: https://twitter.com/kaineer
+#
+# What: get curl command from clipboard
+#   Then store json into ds.auth.json
+#
+
 CLIPBOARD="$(xsel -o)"
 
 if [[ "$CLIPBOARD" != "" ]]; then
