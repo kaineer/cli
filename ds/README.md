@@ -14,6 +14,9 @@ deepseek cli
 
 # when authorized
 ```sh
+ $ ds jq <query> -- jq to auth.json
+ $ ds headers -- jq .headers to auth.json
+
  $ ds session 
    : takes session url from cli
    : or from clipboard
