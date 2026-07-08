@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+#  _____  ___
+# /__   \/ __\  Tangerine Cat, kaineer@gmail.com
+#   / /\/ /
+#  / / / /___   github: https://github.com/kaineer
+#  \/  \____/   twitter: https://twitter.com/kaineer
+#
+# What: querying tool for ds development
+#
+
+JSON=$(var ds.auth.json)
+RAW=false
+if [[ "$1" == "-r" ]]; then
+  RAW=true
+  shift
+fi
+QUERY="$1"
+
+if [[ "$JSON" != "" ]] then
+  if [[ "$QUERY" != "" ]] then
+    if [[ "$RAW" == "true" ]] then
+      echo "$JSON" | jq -r "$QUERY"
+    else
+      echo "$JSON" | jq "$QUERY"
+    fi
+  fi
+fi
+

@@ -1,9 +1,20 @@
 #!/usr/bin/env bash
 
+#  _____  ___
+# /__   \/ __\  Tangerine Cat, kaineer@gmail.com
+#   / /\/ /
+#  / / / /___   github: https://github.com/kaineer
+#  \/  \____/   twitter: https://twitter.com/kaineer
+#
+# What: get curl command from clipboard
+#   Then store json into ds.auth.json
+#
+
 CLIPBOARD="$(xsel -o)"
 
 if [[ "$CLIPBOARD" != "" ]]; then
   var -i ds.auth.curl
   var ds.auth.curl | python3 "$PDIR/curl2json" | xsel -ib
   var -i ds.auth.json
+  var rm ds.auth.curl
 fi

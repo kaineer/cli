@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
 
+#  _____  ___
+# /__   \/ __\  Tangerine Cat, kaineer@gmail.com
+#   / /\/ /
+#  / / / /___   github: https://github.com/kaineer
+#  \/  \____/   twitter: https://twitter.com/kaineer
+#
+# What: remove auth variables
+#
+
 var rm ds.auth.curl
 var rm ds.auth.json
