@@ -6,8 +6,7 @@
 #  / / / /___   github: https://github.com/kaineer
 #  \/  \____/   twitter: https://twitter.com/kaineer
 #
-# What: remove auth variables
+# What: remove local auth variables
 #
 
-var rm ds.auth.curl
-var rm ds.auth.json
+var clean

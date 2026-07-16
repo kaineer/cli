@@ -5,13 +5,32 @@ DIR0=$(dirname $BIN0)
 SDIR="$DIR0/ds.d"
 PDIR="$DIR0/ds.py"
 
-if [[ "$1" == "ls" ]]; then
-  cd $SDIR && ls -1 && cd - &>/dev/null
+VAR_ROOT="$HOME/var/ds"
+
+list_commands() {
+  for x in $(ls -1); do
+    description=$(cat $x | grep "What:" | sed "s/# What: //")
+    name=$x
+    echo " $ ds $name -- $description"
+  done
+}
+
+case "$1" in 
+"h"|"help")
+  echo "# deepseek cli"
+  echo ""
+  echo " $ ds help -- output this list"
+  echo " $ ds edit -- edit commands dir"
+  cd $SDIR && list_commands && cd - &>/dev/null
   exit 0
-fi
+  ;;
+"e"|"edit")
+  $EDITOR "$SDIR"
+  ;;
+esac
 
 if [ -f "$SDIR/$1" ]; then
   SF="$SDIR/$1"
   shift
-  . "$SF" $@
+  VAR_ROOT=$VAR_ROOT . "$SF" $@
 fi

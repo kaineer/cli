@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-var ds.auth.json | jq .headers
+# What: show authorization headers
+
+var auth.json | jq .headers

@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+# What: manage local vars
+
+case "$1" in
+  # Remove all local vars
+  "clean") var clean ;;
+  # Display local vars
+  *)
+    var ls ;;
+esac

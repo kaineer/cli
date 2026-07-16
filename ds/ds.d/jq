@@ -9,7 +9,7 @@
 # What: querying tool for ds development
 #
 
-JSON=$(var ds.auth.json)
+JSON=$(var auth.json)
 RAW=false
 if [[ "$1" == "-r" ]]; then
   RAW=true
@@ -17,13 +17,11 @@ if [[ "$1" == "-r" ]]; then
 fi
 QUERY="$1"
 
-if [[ "$JSON" != "" ]] then
-  if [[ "$QUERY" != "" ]] then
-    if [[ "$RAW" == "true" ]] then
-      echo "$JSON" | jq -r "$QUERY"
-    else
-      echo "$JSON" | jq "$QUERY"
-    fi
+if [[ "$JSON" != "" && "$QUERY" != "" ]] then
+  if [[ "$RAW" == "true" ]] then
+    echo "$JSON" | jq -r "$QUERY"
+  else
+    echo "$JSON" | jq "$QUERY"
   fi
 fi
 
