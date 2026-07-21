@@ -8,4 +8,11 @@ list_plugin() {
 
 case "$1" in
   "ls") list_plugin ;;
+  "") 
+    F=$(list_plugin | fzf)
+    if [[ "$F" != "" ]]; then
+      $EDITOR "$PLUGINS_DIR/$F"
+    fi
+    ;;
 esac
+
