@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+get_file_list() {
+  fd . src -tf | fzf -m
+}
+
+for x in $(get_file_list); do
+  echo -e "## $x\n\`\`\`$x"
+  cat $x
+  echo -e "\`\`\`\n"
+done | xsel -ib

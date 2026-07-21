@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+PLUGINS_DIR="$HOME/.local/share/nvim/site/pack/core/opt"
+
+list_plugin() {
+  cd "$PLUGINS_DIR" && ls -1
+}
+
+case "$1" in
+  "ls") list_plugin ;;
+esac
