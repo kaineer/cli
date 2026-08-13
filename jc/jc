@@ -11,10 +11,6 @@ echo $PYTHONPATH
 case "$1" in
 "lt") 
     shift
-    if [[ "$1" == "" ]]; then
-      python3 "$SDIR/list_types.py" $PWD
-    else
-      python3 "$SDIR/list_types.py" $@
-    fi
+    python3 "$SDIR/list_types.py" ${1:-$PWD}
     ;;
 esac
