@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+BIN0=$(readlink -f $0)
+DIR0=$(dirname $BIN0)
+
+RDIR=$(dirname $DIR0)
+
+case "$1" in
+  "e0") $EDITOR $BIN0 ;;
+  "ls") cd $RDIR; ls -1 | grep -v README ;;
+  "new") echo "TODO new" ;;
+  "install") echo "TODO install" ;; 
+  "ingrave") echo "TODO ingrave" ;;
+  "h"|"help") echo "TODO cli help" ;;
+  *) echo "TODO new+edit $1"
+esac
