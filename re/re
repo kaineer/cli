@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+for x in $(ls -1); do t=$(file -b --mime-type $x); [[ "$t" == "inode/x-empty" ]] && rm $x; done

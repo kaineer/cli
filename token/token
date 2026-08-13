@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
 __usage() {
-  echo " $ $0 gh  # create new token on github"
-  echo " $ $0 sc  # create new token on sourcecraft"
+  BN=$(basename $0)
+  echo " $ $BN gh  # create new token on github"
+  echo " $ $BN sc  # create new token on sourcecraft"
 }
 
 case "$1" in

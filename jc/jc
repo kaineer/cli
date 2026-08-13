@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+BIN0=$(readlink -f $0)
+DIR0=$(dirname $BIN0)
+SDIR="$DIR0/jcpy"
+
+export PYTHONPATH="$SDIR:$PYTHONPATH"
+
+echo $PYTHONPATH
+
+case "$1" in
+"lt") 
+    shift
+    if [[ "$1" == "" ]]; then
+      python3 "$SDIR/list_types.py" $PWD
+    else
+      python3 "$SDIR/list_types.py" $@
+    fi
+    ;;
+esac

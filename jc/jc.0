@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+"""
+Основной скрипт jc для работы с TypeScript файлами.
+Использование: jc ls [каталог]
+"""
+
+import sys
+import os
+from pathlib import Path
+
+# Добавляем подкаталог jcpy в путь импорта
+script_path = Path(__file__).resolve()
+script_dir = script_path.parent
+jcpy_dir = script_dir / 'jcpy'
+sys.path.insert(0, str(jcpy_dir))
+
+# Импортируем функцию из скрипта в подкаталоге
+try:
+    from list_types import list_types
+except ImportError as e:
+    print(f"Ошибка: не удалось импортировать модуль из {jcpy_dir}", file=sys.stderr)
+    print(f"Детали: {e}", file=sys.stderr)
+    sys.exit(1)
+
+def print_usage():
+    """Выводит справку по использованию."""
+    print("Search and modify js sources")
+    print()
+    print(" $ jc lt           # search types from current dir")
+    print(" $ jc lt ./src     # search types from ./src")
+
+def main():
+    """Основная функция скрипта."""
+    # Проверяем наличие аргументов
+    if len(sys.argv) < 2:
+        print("Ошибка: не указана команда", file=sys.stderr)
+        print_usage()
+        sys.exit(1)
+    
+    command = sys.argv[1]
+    
+    # Обработка команды lt
+    if command == "lt":
+        # Определяем base_dir (второй аргумент или текущий каталог)
+        if len(sys.argv) >= 3:
+            base_dir = sys.argv[2]
+        else:
+            base_dir = os.getcwd()
+        
+        # Проверяем, что каталог существует
+        if not os.path.isdir(base_dir):
+            print(f"Ошибка: {base_dir} не является каталогом", file=sys.stderr)
+            sys.exit(1)
+        
+        # Вызываем функцию list_types
+        try:
+            list_types(base_dir)
+        except Exception as e:
+            print(f"Ошибка при выполнении list_types: {e}", file=sys.stderr)
+            sys.exit(1)
+    
+    # Команда help или -h или --help
+    elif command in ["h", "help", "-h", "--help"]:
+        print_usage()
+    
+    # Неизвестная команда
+    else:
+        print(f"Ошибка: неизвестная команда '{command}'", file=sys.stderr)
+        print_usage()
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+
