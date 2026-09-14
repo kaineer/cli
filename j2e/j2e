@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+
+#  _____  ___
+# /__   \/ __\  Tangerine Cat, kaineer@gmail.com
+#   / /\/ /
+#  / / / /___   github: https://github.com/kaineer
+#  \/  \____/   twitter: https://twitter.com/kaineer
+#
+# What: templates with filling in
+
+BIN0="$(readlink -f $0)"
+DIR0="$(dirname $BIN0)"
+DIR="$(dirname $DIR0)"
+PY_DIR="$DIR0/j2e.d"
+
+J2E_DIR="$HOME/var/j2e"
+
+ensure_directory() {
+  mkdir -p "$J2E_DIR"
+}
+
+ensure_directory
+
+edit_file() {
+  $EDITOR $1
+}
+
+create_and_edit() {
+  NAME="$1"
+  DIR=$(dirname $NAME)
+  if [[ "$DIR" == "." ]]; then
+    edit_file "$J2E_DIR/$NAME.j2"
+  else
+    mkdir -p "$J2E_DIR/$DIR" && edit_file "$J2E_DIR/$NAME.j2"
+  fi
+}
+
+remove() {
+  F="$J2E_DIR/$1.j2"
+  if [ -f "$F" ]; then
+    rm $F
+  fi
+}
+
+inspect() {
+  # list variables
+  F="$J2E_DIR/$1.j2"
+  if [ -f $F ]; then
+    python3 "$PY_DIR/inspect" "$1"
+  fi
+}
+
+case "$1" in 
+  "mk" | "j2") shift; create_and_edit $@ ;;
+  "rm") shift; remove $@ ;;
+  "lv" | "lsv" | "list-vars") shift; inspect $@ ;;
+esac
