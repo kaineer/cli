@@ -9,12 +9,12 @@ __debug() {
   if [[ "$DEBUG" == "" ]]; then
     echo -n ""
   else
-    echo -e " $(ansi cyan bold)[DEBUG]$(ansi reset) $@"
+    echo -e " $(ansi cyan bold)$(icon log debug)$(ansi reset) $@"
   fi
 }
 
 __warn() {
-  echo -e " $(ansi yellow bold)[WARN ]$(ansi reset) $@"
+  echo -e " $(ansi yellow bold)$(icon log warn)$(ansi reset) $@"
 }
 
 __cli_ls() {
@@ -68,12 +68,36 @@ __cli_rm() {
   fi
 }
 
+__cli_edit() {
+  D=$RDIR/$1
+  F=$D/$1
+  if [ -d $D ]; then
+    $EDITOR $F
+  else
+    mkdir -p $D
+    $EDITOR $F
+    [ -f $F ] && chmod 755 $F
+  fi
+}
+
+__cli_import() {
+  if [ -n $1 ]; then
+    if [ -f "$HOME/bin/$1" ]; then
+      if [ -d "$RDIR/$1" ]; then
+        cp "$HOME/bin/$1" "$RDIR/$1/$1"
+      fi
+    fi
+  fi
+}
+
 __cli_help() {
-  echo " $ cli ls                    # list created scripts"
+  echo "$(ansi yellow bold)Cli sandbox$(ansi reset)"
+  echo ""
+  echo "$(ansi cyan) $ cli ls                    # list created scripts"
   echo " $ cli rm <scriptname>       # remove a script"
   echo " $ cli new <scriptname>      # create a script"
   echo " $ cli install <scriptname>  # create a script"
-  echo " $ cli help                  # show this help"
+  echo " $ cli h[elp]                # show this help$(ansi reset)"
 }
 
 case "$1" in
@@ -81,7 +105,8 @@ case "$1" in
   "ls") cd $RDIR; __cli_ls ;;
   "rm") shift; __cli_rm $@ ;;
   "new") shift; __cli_new $@ ;;
+  "in"|"import") shift; __cli_import $@ ;;
   "install") shift; __cli_install $@ ;;
-  "h"|"help") __cli_help ;;
-  *) echo "TODO new+edit $1"
+  "h"|"help"|"--help") __cli_help ;;
+  *) __cli_edit $@ ;;
 esac

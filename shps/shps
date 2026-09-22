@@ -3,18 +3,19 @@
 shedevrum image generator
 
 Usage:
-    python3 shps --curl-file curl.txt --prompt-file prompt.txt [--outdir ./out]
+    python3 shps --curl-file curl.txt [--prompt-file prompt.txt] [--outdir ./out]
 
 Логика:
     1. Парсим curl-файл: CSRF-токен, Cookie, User-Agent, Origin, Referer.
-    2. Читаем промпт (JSON или plain text).
-    3. POST /routes/image с JSON.
+    2. Если указан --prompt-file — читаем промпт (JSON или plain text)
+       и POST /routes/image с JSON.
        - Если в теле {"error":{"status":409}} (при HTTP 200) ->
          DELETE /routes/image?kind=image&appPlatform=web, затем повторный POST.
        - Иначе HTTP >= 400 -> ошибка.
-    4. Поллинг GET /routes/image?kind=image&appPlatform=web,
+       Без --prompt-file POST не отправляется: только забираем уже доступное.
+    3. Поллинг GET /routes/image?kind=image&appPlatform=web,
        пока не найдём URL'ы masterpiecer-images.s3.yandex.net/...:N.
-    5. Скачиваем картинки в outdir.
+    4. Скачиваем картинки в outdir.
 """
 
 import argparse
@@ -37,7 +38,8 @@ DEFAULT_MODEL = "v11"
 DEFAULT_ASPECT = "9/16"
 
 IMAGE_HOST_MARKER = "masterpiecer-images.s3.yandex.net"
-POLL_FRAMES = ("[    ]", "[   ]", "[  ]", "[ ]", "[]")
+POLL_FRAMES = ("[    ]", "[󰨓   ]", "[󰨓󰨓  ]", "[󰨓󰨓󰨓 ]", "[󰨓󰨓󰨓󰨓]")
+# 󰨓
 
 NTFY_PUB = "shps-9938ec9e"
 
@@ -88,6 +90,21 @@ def http_brief(resp: requests.Response, obj) -> str:
     return f"http={resp.status_code}"
 
 
+CURL_REFRESH_HINT = (
+    "сессия протухла (499) — скопируйте свежий curl из DevTools "
+    "и обновите curl-файл"
+)
+
+
+def parse_cookie_pairs(raw: str, cookies: dict) -> None:
+    for part in raw.split(";"):
+        part = part.strip()
+        if not part or "=" not in part:
+            continue
+        k, v = part.split("=", 1)
+        cookies[k.strip()] = v.strip()
+
+
 # ---------- парсинг curl ----------
 
 def parse_curl_file(path: Path) -> dict:
@@ -130,21 +147,15 @@ def parse_curl_file(path: Path) -> dict:
     # Куки -b '...'
     m = re.search(r"-b\s+'([^']+)'", target)
     if m:
-        raw = m.group(1)
-        for part in raw.split(";"):
-            part = part.strip()
-            if not part:
-                continue
-            if "=" in part:
-                k, v = part.split("=", 1)
-                cookies[k.strip()] = v.strip()
+        parse_cookie_pairs(m.group(1), cookies)
+
+    cookie_header = headers.get("Cookie") or headers.get("cookie")
+    if cookie_header:
+        parse_cookie_pairs(cookie_header, cookies)
 
     # Если X-CSRF-Token нет в заголовках, но есть в куках — синтезируем
     if "X-CSRF-Token" not in headers and "csrf_token" in cookies:
         headers["X-CSRF-Token"] = cookies["csrf_token"]
-
-    if "X-CSRF-Token" not in headers:
-        raise RuntimeError("Не найден CSRF-токен ни в заголовках, ни в куках")
 
     return {"headers": headers, "cookies": cookies}
 
@@ -269,6 +280,21 @@ def is_conflict(obj) -> bool:
     return False
 
 
+def is_auth_stale(resp: requests.Response, obj=None) -> bool:
+    """
+    499 — креды протухли, генерация не пойдёт.
+    Смотрим и HTTP-код, и status в теле.
+    """
+    if resp.status_code == 499:
+        return True
+    if not isinstance(obj, dict):
+        return False
+    err = obj.get("error")
+    if isinstance(err, dict) and err.get("status") == 499:
+        return True
+    return obj.get("status") == 499
+
+
 def is_empty_ok(obj) -> bool:
     """{} — задача принята, результата пока нет."""
     return isinstance(obj, dict) and len(obj) == 0
@@ -293,6 +319,22 @@ def extract_image_urls(obj) -> list:
     return found
 
 
+def extract_result_prompt(obj) -> str | None:
+    """Достаём .result.params.prompt из ответа GET/POST."""
+    if not isinstance(obj, dict):
+        return None
+    result = obj.get("result")
+    if not isinstance(result, dict):
+        return None
+    params = result.get("params")
+    if not isinstance(params, dict):
+        return None
+    prompt = params.get("prompt")
+    if isinstance(prompt, str) and prompt.strip():
+        return prompt
+    return None
+
+
 # ---------- основной флоу ----------
 
 def create_task(session: requests.Session, payload: dict) -> tuple[int, float]:
@@ -310,6 +352,8 @@ def create_task(session: requests.Session, payload: dict) -> tuple[int, float]:
     _, obj = parse_body(resp)
     chain.append(f"POST#1 {http_brief(resp, obj)}".rstrip())
 
+    if is_auth_stale(resp, obj):
+        stop("POST#1", CURL_REFRESH_HINT)
     if is_adult(obj):
         stop("POST#1", "adult content")
 
@@ -317,6 +361,8 @@ def create_task(session: requests.Session, payload: dict) -> tuple[int, float]:
         d = delete_image(session)
         _, dobj = parse_body(d)
         chain.append(f"DELETE {http_brief(d, dobj)}".rstrip())
+        if is_auth_stale(d, dobj):
+            stop("DELETE", CURL_REFRESH_HINT)
         if d.status_code >= 400:
             stop("DELETE", f"http={d.status_code}")
 
@@ -324,6 +370,8 @@ def create_task(session: requests.Session, payload: dict) -> tuple[int, float]:
         _, obj2 = parse_body(resp2)
         chain.append(f"POST#2 {http_brief(resp2, obj2)}".rstrip())
 
+        if is_auth_stale(resp2, obj2):
+            stop("POST#2", CURL_REFRESH_HINT)
         if is_conflict(obj2):
             stop("POST#2", "conflict 409")
         if is_adult(obj2):
@@ -343,16 +391,19 @@ def create_task(session: requests.Session, payload: dict) -> tuple[int, float]:
 
 def poll_until_ready(
     session: requests.Session,
-    post_n: int,
+    post_n: int | None,
     post_ts: float,
     timeout_s: int = 300,
-) -> list:
+) -> tuple[list, str | None]:
     """
     Поллинг GET, пока не найдём URL'ы картинок.
-    Одна строка: номер последнего GET и время с успешного POST.
+    Возвращает (urls, prompt из .result.params.prompt или None).
+    Одна строка: номер последнего GET и время с опорной точки
+    (успешный POST или старт get-only режима).
     """
     deadline = time.time() + timeout_s
     attempt = 0
+    since = f"POST#{post_n}" if post_n is not None else "start"
     try:
         while time.time() < deadline:
             attempt += 1
@@ -361,9 +412,13 @@ def poll_until_ready(
             elapsed = fmt_elapsed(time.time() - post_ts)
             frame = POLL_FRAMES[(attempt - 1) % len(POLL_FRAMES)]
             _rewrite(
-                f"{frame} GET #{attempt}  +{elapsed} since POST#{post_n}"
+                f"{frame} GET #{attempt}  +{elapsed} since {since}"
             )
 
+            if is_auth_stale(resp, data):
+                raise RuntimeError(
+                    f"[poll] GET #{attempt}  STOPPED: {CURL_REFRESH_HINT}"
+                )
             if resp.status_code >= 400:
                 raise RuntimeError(
                     f"[poll] GET #{attempt}  STOPPED: http={resp.status_code}"
@@ -377,13 +432,13 @@ def poll_until_ready(
             urls = extract_image_urls(data) if data is not None else []
             if urls:
                 _clear_live()
-                return urls
+                return urls, extract_result_prompt(data)
 
-            time.sleep(2)
+            time.sleep(5)
 
         raise TimeoutError(
             f"[poll] GET #{attempt}  STOPPED: картинки не появились "
-            f"за {timeout_s}s (POST#{post_n})"
+            f"за {timeout_s}s ({since})"
         )
     except Exception:
         _break_live()
@@ -421,8 +476,10 @@ def download_images(session: requests.Session, urls: list, outdir: Path) -> None
         ) from e
 
     _clear_live()
-    _write(str(outdir.resolve()))
-    _write(last_name)
+    _write(f" file://{str(outdir.resolve())}")
+    for i, url in enumerate(urls):
+        name = url.rsplit("/", 1)[-1]
+        _write(f" `- {name}") 
 
 def default_outdir() -> Path:
     """
@@ -444,9 +501,9 @@ def ntfy(prompt):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--curl-file", required=True, type=Path)
-    ap.add_argument("--prompt-file", required=True, type=Path)
+    ap.add_argument("--prompt-file", type=Path)
     ap.add_argument("--outdir", default=default_outdir(), type=Path)
-    ap.add_argument("--poll-timeout", default=5000, type=int)
+    ap.add_argument("--poll-timeout", default=600, type=int)
     args = ap.parse_args()
 
     try:
@@ -454,28 +511,48 @@ def main():
     except Exception as e:
         raise RuntimeError(f"[cred] STOPPED at curl: {e}") from e
 
-    try:
-        payload = load_prompt(args.prompt_file)
-    except Exception as e:
-        raise RuntimeError(f"[cred] STOPPED at prompt: {e}") from e
+    payload = None
+    if args.prompt_file is not None:
+        try:
+            payload = load_prompt(args.prompt_file)
+        except Exception as e:
+            raise RuntimeError(f"[cred] STOPPED at prompt: {e}") from e
 
-    csrf = parsed["headers"]["X-CSRF-Token"]
-    prompt_preview = payload["prompt"].replace("\n", " ")
-    if len(prompt_preview) > 60:
-        prompt_preview = prompt_preview[:57] + "..."
+    csrf_ok = bool(parsed["headers"].get("X-CSRF-Token"))
+    n_cookies = len(parsed["cookies"])
+    prompt_label = args.prompt_file if args.prompt_file else "(get-only)"
     _write(
-        f"[cred] csrf={csrf[:12]}…  cookies={len(parsed['cookies'])}  "
-        f"prompt={prompt_preview!r}"
+        f"[cred] csrf={'ok' if csrf_ok else 'missing'}, "
+        f"prompt={prompt_label}"
     )
+    if not csrf_ok:
+        raise RuntimeError("[cred] STOPPED: CSRF missing")
+    if n_cookies == 0:
+        raise RuntimeError("[cred] STOPPED: no cookies")
 
     session = build_session(parsed)
 
-    post_n, post_ts = create_task(session, payload)
-    urls = poll_until_ready(
+    if payload is not None:
+        post_n, post_ts = create_task(session, payload)
+    else:
+        post_n, post_ts = None, time.time()
+        _write("[task] skip POST (no --prompt-file)")
+
+    urls, result_prompt = poll_until_ready(
         session, post_n, post_ts, timeout_s=args.poll_timeout
     )
+
     download_images(session, urls, args.outdir)
-    ntfy(payload['prompt'])
+
+    prompt_text = None
+    if payload is not None:
+        prompt_text = payload.get("prompt")
+    if not prompt_text:
+        prompt_text = result_prompt
+    if prompt_text:
+        with open(args.outdir / "README.md", "a") as f:
+            f.write(f"---\n{prompt_text}\n")
+        ntfy(prompt_text)
 
 if __name__ == "__main__":
     try:
