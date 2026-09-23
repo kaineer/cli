@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+if [ -d .git ]; then
+  echo " $(icon log info) $(ansi white bold)$(pwd)$(ansi reset) is a repository"
+  git add . &>/dev/null
+  MESSAGE="(cli sync) Sync from ${HOSTNAME} at $(date +'%Y.%m.%d -- %H:%M')"
+  echo " $(icon log info) $MESSAGE$(ansi reset)"
+  git ci -m "$MESSAGE" &>/dev/null
+  git push origin master &>/dev/null
+else
+  echo " $(icon log warn) $(ansi white bold)$(pwd)$(ansi reset) is not a repository"
+fi
