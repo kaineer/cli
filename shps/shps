@@ -11,7 +11,8 @@ Usage:
     2. Если указан --watch=PREFIX — режим наблюдения за чужими генерациями:
        раз в минуту GET /routes/image?kind=image&appPlatform=web;
        если .result.params.prompt начинается с PREFIX и .result.id
-       ещё не сохраняли — скачиваем картинки как обычно.
+       ещё не сохраняли — сразу берём этот id (включая первый) и
+       сохраняем картинки как обычно (при необходимости дожидаясь URL).
     3. Иначе: если указан --prompt-file — читаем промпт (JSON или plain text)
        и POST /routes/image с JSON.
        - Если в теле {"error":{"status":409}} (при HTTP 200) ->
@@ -509,7 +510,7 @@ def download_images(session: requests.Session, urls: list, outdir: Path) -> None
             dest = outdir / name
             last_name = name
 
-            _rewrite(f"[dl] {i - 1}/{total}")
+            _rewrite(f"[dl] {i - 1}/{total}: {name}")
 
             r = session.get(url, timeout=60, stream=True)
             r.raise_for_status()
@@ -528,9 +529,14 @@ def download_images(session: requests.Session, urls: list, outdir: Path) -> None
 
     _clear_live()
     _write(f" file://{str(outdir.resolve())}")
+    l = len(urls)
     for i, url in enumerate(urls):
         name = url.rsplit("/", 1)[-1]
-        _write(f" `- {name}") 
+        prefix = "├─"
+        if l - 1 == i:
+            prefix = "╰─"
+        filename = name.replace(":", "-")
+        _write(f" {prefix}./{filename}.jpg") 
 
 def default_outdir() -> Path:
     """
@@ -569,10 +575,13 @@ def watch_remote(
     prefix: str,
     outdir: Path,
     interval_s: int = 60,
+    poll_timeout_s: int = 600,
 ) -> None:
     """
     Раз в interval_s секунд GET; если prompt начинается с prefix
-    и .result.id ещё не сохраняли — скачиваем картинки.
+    и .result.id ещё не сохраняли — сразу берём этот id (в том числе
+    первый увиденный) и сохраняем картинки. Если URL'ов ещё нет —
+    дожидаемся обычным поллингом, id не пропускаем.
     """
     saved_ids: set[str] = set()
     attempt = 0
@@ -593,10 +602,8 @@ def watch_remote(
         if rid and rid in saved_ids:
             status = f"done id={rid}"
         elif prompt is not None and prompt.startswith(prefix):
-            if urls and rid:
+            if rid:
                 status = f"match id={rid}"
-            elif rid:
-                status = f"wait id={rid}"
             else:
                 status = "match (no id)"
         elif prompt is not None:
@@ -624,10 +631,15 @@ def watch_remote(
             and prompt.startswith(prefix)
             and rid is not None
             and rid not in saved_ids
-            and urls
         ):
             _clear_live()
             _write(f"[watch] save id={rid}")
+            if not urls:
+                urls, ready_prompt = poll_until_ready(
+                    session, None, time.time(), timeout_s=poll_timeout_s
+                )
+                if ready_prompt:
+                    prompt = ready_prompt
             save_result(session, urls, outdir, prompt)
             saved_ids.add(rid)
             _write(f"[watch] saved {len(saved_ids)} id(s), listening…")
@@ -682,7 +694,12 @@ def main():
     session = build_session(parsed)
 
     if args.watch is not None:
-        watch_remote(session, args.watch, args.outdir)
+        watch_remote(
+            session,
+            args.watch,
+            args.outdir,
+            poll_timeout_s=args.poll_timeout,
+        )
         return
 
     if payload is not None:
