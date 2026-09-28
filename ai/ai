@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+BIN0="$(readlink -f $0)"
+DIR="$(dirname $BIN0)"
+
+SDIR="$DIR/ai.d"
+
+CURL_NAME="${CURL_NAME:-shed}"
+CURL_FILE="${CURL_NAME}.curl"
+
+PY_SCRIPT="$SDIR/$CURL_NAME.py"
+
+case "$1" in
+  "auth") 
+    CLIP="$(xsel -ob)"
+    if [ -n "$CLIP" ]; then
+      echo -ne " $(icon log info) Saving clipboard to ${CURL_FILE}.."
+      echo -ne "${CLIP}" > "${CURL_FILE}"
+      echo -e "done."
+    fi
+    ;;
+  "get"|"watch")
+    "${PY_SCRIPT} $1 --curl-file ${CURL_FILE}"
+    ;;
+  "post")
+    "${PY_SCRIPT} post --curl-file ${CURL_FILE} --prompt-file ${PROMPT_FILE}"
+  "env")
+    cat ".envrc" | sed "s/^/| /"
+    ;;
+esac
