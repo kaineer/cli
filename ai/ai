@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+CURL_NAME="${CURL_NAME:-shed}"
+
+case "$1" in
+  "auth") 
+    CLIP="$(xsel -ob)"
+    if [ -n "$CLIP" ]; then
+      echo -ne " $(icon log info) Saving clipboard to ${CURL_NAME}.curl.."
+      echo -ne "${CLIP}" > "${CURL_NAME}.curl"
+      echo -e "done."
+    fi
+    ;;
+  "env")
+    cat ".envrc" | sed "s/^/> /"
+    ;;
+esac
