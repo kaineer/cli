@@ -10,6 +10,10 @@ CURL_FILE="${CURL_NAME}.curl"
 
 PY_SCRIPT="$SDIR/$CURL_NAME.py"
 
+# plugin [edit] <pluginname>
+# plugin select <pluginname> -> saves into .envrc in current dir
+# plugin rm <pluginname> -> remove plugin from ai.d/
+
 case "$1" in
   "auth") 
     CLIP="$(xsel -ob)"
@@ -18,6 +22,9 @@ case "$1" in
       echo -ne "${CLIP}" > "${CURL_FILE}"
       echo -e "done."
     fi
+    ;;
+  "plugin")
+    echo "Editing plugin [$2]"
     ;;
   "get"|"watch")
     "${PY_SCRIPT} $1 --curl-file ${CURL_FILE}"
