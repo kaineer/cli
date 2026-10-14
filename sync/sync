@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 
+USER_MESSAGE="$@"
+
 if [ -d .git ]; then
   echo " $(icon log info) $(ansi white bold)$(pwd)$(ansi reset) is a repository"
   git add . &>/dev/null
-  MESSAGE="(cli sync) Sync from ${HOSTNAME} at $(date +'%Y.%m.%d -- %H:%M')"
+  if [ -z "$USER_MESSAGE" ]; then
+    MESSAGE="(cli sync) Sync from ${HOSTNAME} at $(date +'%Y.%m.%d -- %H:%M')"
+  else
+    MESSAGE="$USER_MESSAGE"
+  fi
   echo " $(icon log info) $MESSAGE$(ansi reset)"
   git ci -m "$MESSAGE" &>/dev/null
   git push origin master &>/dev/null

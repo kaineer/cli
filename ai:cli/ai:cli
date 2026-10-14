@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+__check_curl() {
+  FN=$(mktemp /tmp/ai.XXXXXX)
+  xsel -ob > $FN
+  source $FN &>/dev/null && EXIT_CODE="$?"
+  if [[ "$EXIT_CODE" == "0" ]]; then
+    echo " $(ansi cyan)$(icon log info)$(ansi reset) It's ok"
+  else
+    echo " $(ansi yellow)$(icon log warn)$(ansi reset) Could not get result. Exit code: $EXIT_CODE"
+  fi
+  rm -f $FN
+}
+
+case "$1" in
+"check") __check_curl ;;
+esac
